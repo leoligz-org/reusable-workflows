@@ -39,6 +39,7 @@ jobs:
       - name: Build and push container to GHCR and/or private registry
         id: build
         run: |
+          set -x
           AUTH_ENTRIES=""
           DEST_ENTRIES=""
           AUTH_SEP="" # Separator for JSON entries (comma)
