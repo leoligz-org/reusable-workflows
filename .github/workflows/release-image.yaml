@@ -10,10 +10,15 @@ on:
   workflow_dispatch:
     # Optional: Provide a description for the manual trigger UI
     inputs:
-      push:
-        description: 'Perform a push after build'
+      ghcr:
+        description: 'Whether to push to GHCR after build'
         required: true
-        default: false
+        default: true
+        type: boolean
+      private:
+        description: 'Whether to push to private registry after build'
+        required: true
+        default: true
         type: boolean
 
 env:
@@ -48,26 +53,39 @@ jobs:
       #       --push-retry 5 \
       #       --image-name-with-digest-file /workspace/image-digest.txt
 
-      - name: Build and push container to private registry
+      - name: Build and push container to GHCR and private registry
         id: build
         run: |
-          # Write config file, change to your destination registry
-          AUTH=$(echo -n '${{ secrets.REGISTRY_SA }}:${{ secrets.REGISTRY_PASS }}' | base64)
-          echo "{\"auths\": {\"$(dirname ${{ vars.IMAGE_REGISTRY }})\": {\"auth\": \"${AUTH}\"}}}" > /kaniko/.docker/config.json
+          auth_entries=()
+          dest_entries=()
+          if ${{ inputs.ghcr }}; then
+            AUTH_GHCR=$(echo -n '${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}' | base64)
+            auth_entries+=("\"ghcr.io\": {\"auth\": \"${AUTH_GHCR}\"}")
+            dest_entries+=("ghcr.io/${GITHUB_REPOSITORY}/${{ vars.IMAGE_REPOSITORY }}:${{ github.ref_name }}")
+          fi
+          if ${{ inputs.private }}; then
+            AUTH_PRIVATE=$(echo -n '${{ secrets.REGISTRY_SA }}:${{ secrets.REGISTRY_PASS }}' | base64)
+            auth_entries+=("\"$(dirname ${{ vars.IMAGE_REGISTRY }})\": {\"auth\": \"${AUTH_PRIVATE}\"}")
+            dest_entries+=("${{ env.IMAGE_NAME }}:${{ github.ref_name }}")
+          fi
+          auth_string=$(IFS=,; echo "${auth_entries[*]}")
+          echo "{\"auths\": {${auth_string}}}" > /kaniko/.docker/config.json
 
           # Configure git
           export GIT_USERNAME="kaniko-bot"
           export GIT_PASSWORD="${{ secrets.GITHUB_TOKEN }}" # works for GHEC or GHES container registry
 
           # Build and push (sub in your image, of course)
+          dest_args=$(printf "--destination=%s " "${dest_entries[@]}")
           /kaniko/executor --dockerfile="Dockerfile" \
             --context="${{ github.repositoryUrl }}#${{ github.ref }}#${{ github.sha }}" \
-            --destination="${{ env.IMAGE_NAME }}:${{ github.ref_name }}" \
+            ${dest_args[@]} \
             --push-retry 5 \
             --image-name-tag-with-digest-file /workspace/image-digest.txt
           echo "image_name_tag_digest=$(cat /workspace/image-digest.txt)" >> "$GITHUB_OUTPUT"
 
   sign:
+    if: inputs.private
     runs-on: [arc-runners-org]
     needs: build
     steps:
