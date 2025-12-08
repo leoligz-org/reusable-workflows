@@ -101,10 +101,10 @@ jobs:
             --push-retry 5 \
             --image-name-tag-with-digest-file /workspace/image-digest.txt
 
-          echo "image_name_tag_digest=$(grep -o \"^${{ env.IMAGE_NAME }}.*\$\" /workspace/image-digest.txt)" >> "$GITHUB_OUTPUT"
+          echo "image_name_tag_digest=$(grep -o ^${{ env.IMAGE_NAME }}.*\$ /workspace/image-digest.txt)" >> "$GITHUB_OUTPUT"
 
   sign:
-    if: ${{ needs.build.outputs.image_name_tag_digest }} != ''
+    if: ${{ needs.build.outputs.image_name_tag_digest }} != 'image_name_tag_digest='
     runs-on: [arc-runners-org]
     needs: build
     steps:
@@ -114,14 +114,10 @@ jobs:
       - uses: ./.github/actions/cache
 
       - name: Cosign image signing
-        env:
-          image_name_tag_digest: ${{ needs.build.outputs.image_name_tag_digest }}
         run: |
           /home/runner/bin/cosign login $(dirname ${{ vars.IMAGE_REGISTRY }}) -u '${{ secrets.REGISTRY_SA }}' -p '${{ secrets.REGISTRY_PASS }}'
-          /home/runner/bin/cosign sign --key k8s://arc-runners/cosign ${image_name_tag_digest}
+          /home/runner/bin/cosign sign --key k8s://arc-runners/cosign ${{ needs.build.outputs.image_name_tag_digest }}
 
       - name: Cosign image signing verifying
-        env:
-          image_name_tag_digest: ${{ needs.build.outputs.image_name_tag_digest }}
         run: |
-          /home/runner/bin/cosign verify --key k8s://arc-runners/cosign ${image_name_tag_digest}
+          /home/runner/bin/cosign verify --key k8s://arc-runners/cosign ${{ needs.build.outputs.image_name_tag_digest }}
