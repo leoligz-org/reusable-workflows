@@ -35,8 +35,9 @@ jobs:
 
     outputs:
       image_name_tag_digest: ${{ steps.build.outputs.image_name_tag_digest }}
+
     steps:
-      - name: Define default Environment Variables
+      - name: Define Environment Variables
         run: |
           set -x
           if [ "$GITHUB_EVENT_NAME" = "push" ]; then
@@ -46,6 +47,7 @@ jobs:
             echo "INPUT_GHCR=${{ inputs.ghcr }}" >> $GITHUB_ENV
             echo "INPUT_PRIVATE=${{ inputs.private }}" >> $GITHUB_ENV
           fi
+
       - name: Build and push container to GHCR and/or private registry
         id: build
         run: |
@@ -68,7 +70,7 @@ jobs:
               DEST_SEP=" "
           fi
 
-          # Handle private registry condition. !!!THIS HAS TO BE THE LAST!!!
+          # Handle private registry condition
           if [ "${INPUT_PRIVATE}" = "true" ]; then
               AUTH_PRIVATE=$(printf "%s:%s" '${{ secrets.REGISTRY_SA }}' '${{ secrets.REGISTRY_PASS }}' | base64)
 
@@ -99,11 +101,10 @@ jobs:
             --push-retry 5 \
             --image-name-tag-with-digest-file /workspace/image-digest.txt
 
-          # Assuming the last line is for the private registry
-          echo "image_name_tag_digest=$(tail -n 1 /workspace/image-digest.txt)" >> "$GITHUB_OUTPUT"
+          echo "image_name_tag_digest=$(grep -o \"^${{ env.IMAGE_NAME }}.*\$\" /workspace/image-digest.txt)" >> "$GITHUB_OUTPUT"
 
   sign:
-    if: inputs.private
+    if: ${{ needs.build.outputs.image_name_tag_digest }} != ''
     runs-on: [arc-runners-org]
     needs: build
     steps:
