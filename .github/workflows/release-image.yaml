@@ -36,6 +36,15 @@ jobs:
     outputs:
       image_name_tag_digest: ${{ steps.build.outputs.image_name_tag_digest }}
     steps:
+      - name: Define default Environment Variables
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            echo "INPUT_GHCR="true" >> $GITHUB_ENV
+            echo "INPUT_PRIVATE="true" >> $GITHUB_ENV
+          fi
+            echo "INPUT_GHCR="${{ inputs.ghcr }}" >> $GITHUB_ENV
+            echo "INPUT_PRIVATE="${{ inputs.private }}" >> $GITHUB_ENV
+          fi
       - name: Build and push container to GHCR and/or private registry
         id: build
         run: |
@@ -48,7 +57,7 @@ jobs:
           # --- 1. Process Registries and Build Delimited Strings ---
 
           # Handle ghcr.io condition
-          if [ "${{ inputs.ghcr }}" = "true" ]; then
+          if [ "${INPUT_GHCR}" = "true" ]; then
               AUTH_GHCR=$(printf "%s:%s" "${{ github.actor }}" "${{ secrets.GITHUB_TOKEN }}" | base64)
               
               AUTH_ENTRIES="${AUTH_ENTRIES}${AUTH_SEP}\"ghcr.io\": {\"auth\": \"${AUTH_GHCR}\"}"
@@ -59,7 +68,7 @@ jobs:
           fi
 
           # Handle private registry condition
-          if [ "${{ inputs.private }}" = "true" ]; then
+          if [ "${INPUT_PRIVATE}" = "true" ]; then
               AUTH_PRIVATE=$(printf "%s:%s" "${{ secrets.REGISTRY_SA }}" "${{ secrets.REGISTRY_PASS }}" | base64)
 
               REGISTRY_DIR=$(dirname "${{ vars.IMAGE_REGISTRY }}")
