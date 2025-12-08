@@ -1,0 +1,90 @@
+name: Build and Release Docker Images
+
+on:
+  push:
+    # Pattern matched against refs/tags
+    tags:        
+      - '*'           # Push events to every tag not containing /
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    # Optional: Provide a description for the manual trigger UI
+    inputs:
+      push:
+        description: 'Perform a push after build'
+        required: true
+        default: false
+        type: boolean
+
+env:
+  IMAGE_NAME: ${{ vars.IMAGE_REGISTRY }}/${{ vars.IMAGE_REPOSITORY }}
+
+jobs:
+  build:
+    runs-on: [arc-runners-org] # our new runner set
+    container:
+      image: gcr.io/kaniko-project/executor:debug # the kaniko image
+    permissions:
+      contents: read # read the repository
+      packages: write # push to GHCR, omit if not pushing to GitHub's container registry
+
+    outputs:
+      image_name_tag_digest: ${{ steps.build.outputs.image_name_tag_digest }}
+    steps:
+      # - name: Build and push container to GHCR
+      #   run: |
+      #     # Write config file, change to your destination registry
+      #     AUTH=$(echo -n ${{ github.actor }}:${{ secrets.GITHUB_TOKEN }} | base64)
+      #     echo "{\"auths\": {\"ghcr.io\": {\"auth\": \"${AUTH}\"}}}" > /kaniko/.docker/config.json
+
+      #     # Configure git
+      #     export GIT_USERNAME="kaniko-bot"
+      #     export GIT_PASSWORD="${{ secrets.GITHUB_TOKEN }}" # works for GHEC or GHES container registry
+
+      #     # Build and push (sub in your image, of course)
+      #     /kaniko/executor --dockerfile="Dockerfile" \
+      #       --context="${{ github.repositoryUrl }}#${{ github.ref }}#${{ github.sha }}" \
+      #       --destination="ghcr.io/${GITHUB_REPOSITORY}/kaniko-build:test" \
+      #       --push-retry 5 \
+      #       --image-name-with-digest-file /workspace/image-digest.txt
+
+      - name: Build and push container to private registry
+        id: build
+        run: |
+          # Write config file, change to your destination registry
+          AUTH=$(echo -n '${{ secrets.REGISTRY_SA }}:${{ secrets.REGISTRY_PASS }}' | base64)
+          echo "{\"auths\": {\"$(dirname ${{ vars.IMAGE_REGISTRY }})\": {\"auth\": \"${AUTH}\"}}}" > /kaniko/.docker/config.json
+
+          # Configure git
+          export GIT_USERNAME="kaniko-bot"
+          export GIT_PASSWORD="${{ secrets.GITHUB_TOKEN }}" # works for GHEC or GHES container registry
+
+          # Build and push (sub in your image, of course)
+          /kaniko/executor --dockerfile="Dockerfile" \
+            --context="${{ github.repositoryUrl }}#${{ github.ref }}#${{ github.sha }}" \
+            --destination="${{ env.IMAGE_NAME }}:${{ github.ref_name }}" \
+            --push-retry 5 \
+            --image-name-tag-with-digest-file /workspace/image-digest.txt
+          echo "image_name_tag_digest=$(cat /workspace/image-digest.txt)" >> "$GITHUB_OUTPUT"
+
+  sign:
+    runs-on: [arc-runners-org]
+    needs: build
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v6
+
+      - uses: ./.github/actions/cache
+
+      - name: Cosign image signing
+        env:
+          image_name_tag_digest: ${{ needs.build.outputs.image_name_tag_digest }}
+        run: |
+          /home/runner/bin/cosign login $(dirname ${{ vars.IMAGE_REGISTRY }}) -u '${{ secrets.REGISTRY_SA }}' -p '${{ secrets.REGISTRY_PASS }}'
+          /home/runner/bin/cosign sign --key k8s://arc-runners/cosign ${image_name_tag_digest}
+
+      - name: Cosign image signing verifying
+        env:
+          image_name_tag_digest: ${{ needs.build.outputs.image_name_tag_digest }}
+        run: |
+          /home/runner/bin/cosign verify --key k8s://arc-runners/cosign ${image_name_tag_digest}

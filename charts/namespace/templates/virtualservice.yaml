@@ -1,0 +1,27 @@
+{{- if .Values.serviceMesh.enable -}}
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: {{ .Values.serviceMesh.service.name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "namespace.labels" . | nindent 4 }}
+spec:
+  gateways:
+  {{- if .Values.serviceMesh.externalIngress }}
+  - istio-ingress/gateway
+  {{ end }}
+  {{- if .Values.serviceMesh.internalIngress }}
+  - istio-ingress/gateway-internal
+  {{ end }}
+  {{- with .Values.serviceMesh.hosts }}
+  hosts:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  http:
+  - route:
+    - destination:
+        host: {{ .Values.serviceMesh.service.name }}.{{ include "common.names.namespace" . }}.svc.cluster.local
+        port:
+          number: {{ .Values.serviceMesh.service.port }}
+{{- end }}
