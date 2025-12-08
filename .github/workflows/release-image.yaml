@@ -36,25 +36,9 @@ jobs:
     outputs:
       image_name_tag_digest: ${{ steps.build.outputs.image_name_tag_digest }}
     steps:
-      # - name: Build and push container to GHCR
-      #   run: |
-      #     # Write config file, change to your destination registry
-      #     AUTH=$(echo -n ${{ github.actor }}:${{ secrets.GITHUB_TOKEN }} | base64)
-      #     echo "{\"auths\": {\"ghcr.io\": {\"auth\": \"${AUTH}\"}}}" > /kaniko/.docker/config.json
-
-      #     # Configure git
-      #     export GIT_USERNAME="kaniko-bot"
-      #     export GIT_PASSWORD="${{ secrets.GITHUB_TOKEN }}" # works for GHEC or GHES container registry
-
-      #     # Build and push (sub in your image, of course)
-      #     /kaniko/executor --dockerfile="Dockerfile" \
-      #       --context="${{ github.repositoryUrl }}#${{ github.ref }}#${{ github.sha }}" \
-      #       --destination="ghcr.io/${GITHUB_REPOSITORY}/kaniko-build:test" \
-      #       --push-retry 5 \
-      #       --image-name-with-digest-file /workspace/image-digest.txt
-
-      - name: Build and push container to GHCR and private registry
+      - name: Build and push container to GHCR and/or private registry
         id: build
+        shell: bash
         run: |
           auth_entries=()
           dest_entries=()
