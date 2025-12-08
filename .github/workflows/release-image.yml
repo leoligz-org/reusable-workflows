@@ -41,12 +41,12 @@ jobs:
 
     steps:
       - name: Enable All Builds by Default
-        if: github.event_name == 'push'
+        if: ${{ github.event.inputs.ghcr == '' }}
         run: |
           echo "INPUT_GHCR=true" >> $GITHUB_ENV
           echo "INPUT_PRIVATE=true" >> $GITHUB_ENV
       - name: Enable Builds According to Input
-        if: github.event_name != 'push'
+        if: ${{ github.event.inputs.ghcr != '' }}
         run: |
           set -x
           echo "INPUT_GHCR=${{ inputs.ghcr }}" >> $GITHUB_ENV
@@ -112,10 +112,7 @@ jobs:
     runs-on: [arc-runners-org]
     needs: build
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v6
-
-      - uses: ./.github/actions/cache
+      - uses: leoligz-org/reusable-workflows/.github/actions/cache@feat/workflow-call
 
       - name: Cosign image signing
         run: |
