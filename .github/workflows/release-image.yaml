@@ -41,7 +41,7 @@ jobs:
           if [ "$GITHUB_EVENT_NAME" = "push" ]; then
             echo "INPUT_GHCR="true" >> $GITHUB_ENV
             echo "INPUT_PRIVATE="true" >> $GITHUB_ENV
-          fi
+          else
             echo "INPUT_GHCR="${{ inputs.ghcr }}" >> $GITHUB_ENV
             echo "INPUT_PRIVATE="${{ inputs.private }}" >> $GITHUB_ENV
           fi
