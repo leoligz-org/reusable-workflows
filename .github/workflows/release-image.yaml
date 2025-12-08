@@ -38,12 +38,13 @@ jobs:
     steps:
       - name: Define default Environment Variables
         run: |
+          set -x
           if [ "$GITHUB_EVENT_NAME" = "push" ]; then
-            echo "INPUT_GHCR="true" >> $GITHUB_ENV
-            echo "INPUT_PRIVATE="true" >> $GITHUB_ENV
+            echo "INPUT_GHCR=true" >> $GITHUB_ENV
+            echo "INPUT_PRIVATE=true" >> $GITHUB_ENV
           else
-            echo "INPUT_GHCR="${{ inputs.ghcr }}" >> $GITHUB_ENV
-            echo "INPUT_PRIVATE="${{ inputs.private }}" >> $GITHUB_ENV
+            echo "INPUT_GHCR=${{ inputs.ghcr }}" >> $GITHUB_ENV
+            echo "INPUT_PRIVATE=${{ inputs.private }}" >> $GITHUB_ENV
           fi
       - name: Build and push container to GHCR and/or private registry
         id: build
