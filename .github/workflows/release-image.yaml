@@ -38,34 +38,56 @@ jobs:
     steps:
       - name: Build and push container to GHCR and/or private registry
         id: build
-        shell: bash
         run: |
-          auth_entries=()
-          dest_entries=()
-          if ${{ inputs.ghcr }}; then
-            AUTH_GHCR=$(echo -n '${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}' | base64)
-            auth_entries+=("\"ghcr.io\": {\"auth\": \"${AUTH_GHCR}\"}")
-            dest_entries+=("ghcr.io/${GITHUB_REPOSITORY}/${{ vars.IMAGE_REPOSITORY }}:${{ github.ref_name }}")
-          fi
-          if ${{ inputs.private }}; then
-            AUTH_PRIVATE=$(echo -n '${{ secrets.REGISTRY_SA }}:${{ secrets.REGISTRY_PASS }}' | base64)
-            auth_entries+=("\"$(dirname ${{ vars.IMAGE_REGISTRY }})\": {\"auth\": \"${AUTH_PRIVATE}\"}")
-            dest_entries+=("${{ env.IMAGE_NAME }}:${{ github.ref_name }}")
-          fi
-          auth_string=$(IFS=,; echo "${auth_entries[*]}")
-          echo "{\"auths\": {${auth_string}}}" > /kaniko/.docker/config.json
+          AUTH_ENTRIES=""
+          DEST_ENTRIES=""
+          AUTH_SEP="" # Separator for JSON entries (comma)
+          DEST_SEP="" # Separator for shell arguments (space)
 
-          # Configure git
+          # --- 1. Process Registries and Build Delimited Strings ---
+
+          # Handle ghcr.io condition
+          if [ "${{ inputs.ghcr }}" = "true" ]; then
+              AUTH_GHCR=$(printf "%s:%s" "${{ github.actor }}" "${{ secrets.GITHUB_TOKEN }}" | base64)
+              
+              AUTH_ENTRIES="${AUTH_ENTRIES}${AUTH_SEP}\"ghcr.io\": {\"auth\": \"${AUTH_GHCR}\"}"
+              DEST_ENTRIES="${DEST_ENTRIES}${DEST_SEP}--destination=ghcr.io/${GITHUB_REPOSITORY}/${{ vars.IMAGE_REPOSITORY }}:${{ github.ref_name }}"
+              
+              AUTH_SEP=","
+              DEST_SEP=" "
+          fi
+
+          # Handle private registry condition
+          if [ "${{ inputs.private }}" = "true" ]; then
+              AUTH_PRIVATE=$(printf "%s:%s" "${{ secrets.REGISTRY_SA }}" "${{ secrets.REGISTRY_PASS }}" | base64)
+
+              REGISTRY_DIR=$(dirname "${{ vars.IMAGE_REGISTRY }}")
+
+              AUTH_ENTRIES="${AUTH_ENTRIES}${AUTH_SEP}\"${REGISTRY_DIR}\": {\"auth\": \"${AUTH_PRIVATE}\"}"
+              DEST_ENTRIES="${DEST_ENTRIES}${DEST_SEP}--destination=${{ env.IMAGE_NAME }}:${{ github.ref_name }}"
+              
+              AUTH_SEP=","
+              DEST_SEP=" "
+          fi
+
+          # --- 2. Write the Docker Config File ---
+          # Use printf to construct the full JSON string reliably
+          printf '{"auths": {%s}}\n' "$AUTH_ENTRIES" > /kaniko/.docker/config.json
+
+          # --- 3. Configure Git ---
           export GIT_USERNAME="kaniko-bot"
-          export GIT_PASSWORD="${{ secrets.GITHUB_TOKEN }}" # works for GHEC or GHES container registry
+          export GIT_PASSWORD="${{ secrets.GITHUB_TOKEN }}"
 
-          # Build and push (sub in your image, of course)
-          dest_args=$(printf "--destination=%s " "${dest_entries[@]}")
+          # --- 4. Execute Kaniko Build ---
+          # The $DEST_ENTRIES variable is unquoted here, so the shell performs word splitting
+          # based on the spaces we used as separators, passing each --destination flag correctly.
+
           /kaniko/executor --dockerfile="Dockerfile" \
             --context="${{ github.repositoryUrl }}#${{ github.ref }}#${{ github.sha }}" \
-            ${dest_args[@]} \
+            $DEST_ENTRIES \
             --push-retry 5 \
             --image-name-tag-with-digest-file /workspace/image-digest.txt
+
           echo "image_name_tag_digest=$(cat /workspace/image-digest.txt)" >> "$GITHUB_OUTPUT"
 
   sign:
