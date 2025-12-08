@@ -68,7 +68,7 @@ jobs:
               DEST_SEP=" "
           fi
 
-          # Handle private registry condition
+          # Handle private registry condition. !!!THIS HAS TO BE THE LAST!!!
           if [ "${INPUT_PRIVATE}" = "true" ]; then
               AUTH_PRIVATE=$(printf "%s:%s" '${{ secrets.REGISTRY_SA }}' '${{ secrets.REGISTRY_PASS }}' | base64)
 
@@ -99,7 +99,8 @@ jobs:
             --push-retry 5 \
             --image-name-tag-with-digest-file /workspace/image-digest.txt
 
-          echo "image_name_tag_digest=$(cat /workspace/image-digest.txt)" >> "$GITHUB_OUTPUT"
+          # Assuming the last line is for the private registry
+          echo "image_name_tag_digest=$(tail -n 1 /workspace/image-digest.txt)" >> "$GITHUB_OUTPUT"
 
   sign:
     if: inputs.private
