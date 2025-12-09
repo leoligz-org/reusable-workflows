@@ -112,7 +112,7 @@ jobs:
     runs-on: [arc-runners-org]
     needs: build
     steps:
-      - uses: leoligz-org/reusable-workflows/.github/actions/cache@feat/workflow-call
+      - uses: leoligz-org/reusable-workflows/.github/actions/cache@main
 
       - name: Cosign image signing
         run: |
