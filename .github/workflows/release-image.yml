@@ -41,12 +41,12 @@ jobs:
 
     steps:
       - name: Enable All Builds by Default
-        if: ${{ github.event.inputs.ghcr == '' }}
+        if: ${{ inputs.ghcr == '' }}
         run: |
           echo "INPUT_GHCR=true" >> $GITHUB_ENV
           echo "INPUT_PRIVATE=true" >> $GITHUB_ENV
       - name: Enable Builds According to Input
-        if: ${{ github.event.inputs.ghcr != '' }}
+        if: ${{ inputs.ghcr != '' }}
         run: |
           set -x
           echo "INPUT_GHCR=${{ inputs.ghcr }}" >> $GITHUB_ENV
