@@ -6,9 +6,12 @@ on:
     tags:        
       - '*'           # Push events to every tag not containing /
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-    # Optional: Provide a description for the manual trigger UI
+  workflow_call:
+    secrets:
+      REGISTRY_SA:
+        required: true
+      REGISTRY_PASS:
+        required: true
     inputs:
       ghcr:
         description: 'Whether to push to GHCR after build'
@@ -37,16 +40,17 @@ jobs:
       image_name_tag_digest: ${{ steps.build.outputs.image_name_tag_digest }}
 
     steps:
-      - name: Define Environment Variables
+      - name: Enable All Builds by Default
+        if: ${{ inputs.ghcr == '' }}
+        run: |
+          echo "INPUT_GHCR=true" >> $GITHUB_ENV
+          echo "INPUT_PRIVATE=true" >> $GITHUB_ENV
+      - name: Enable Builds According to Input
+        if: ${{ inputs.ghcr != '' }}
         run: |
           set -x
-          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
-            echo "INPUT_GHCR=true" >> $GITHUB_ENV
-            echo "INPUT_PRIVATE=true" >> $GITHUB_ENV
-          else
-            echo "INPUT_GHCR=${{ inputs.ghcr }}" >> $GITHUB_ENV
-            echo "INPUT_PRIVATE=${{ inputs.private }}" >> $GITHUB_ENV
-          fi
+          echo "INPUT_GHCR=${{ inputs.ghcr }}" >> $GITHUB_ENV
+          echo "INPUT_PRIVATE=${{ inputs.private }}" >> $GITHUB_ENV
 
       - name: Build and push container to GHCR and/or private registry
         id: build
@@ -108,10 +112,7 @@ jobs:
     runs-on: [arc-runners-org]
     needs: build
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v6
-
-      - uses: ./.github/actions/cache
+      - uses: leoligz-org/reusable-workflows/.github/actions/cache@main
 
       - name: Cosign image signing
         run: |
