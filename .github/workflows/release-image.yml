@@ -108,7 +108,7 @@ jobs:
           echo "image_name_tag_digest=$(grep -o ^${{ env.IMAGE_NAME }}.*\$ /workspace/image-digest.txt)" >> "$GITHUB_OUTPUT"
 
   sign:
-    if: ${{ needs.build.outputs.image_name_tag_digest }} != 'image_name_tag_digest='
+    if: ${{ needs.build.outputs.image_name_tag_digest != 'image_name_tag_digest=' }}
     runs-on: [arc-runners-org]
     needs: build
     steps:
