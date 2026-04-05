@@ -11,4 +11,20 @@ entries:
     urls:
     - https://github.com/leoligz-org/reusable-workflows/releases/download/namespace-0.2.1/namespace-0.2.1.tgz
     version: 0.2.1
-generated: "2025-12-08T15:10:55.466327278Z"
+  universal:
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2026-04-05T21:36:40.375842528Z"
+    description: Helm Chart for the leoligz-org
+    digest: 5794553383931565faad5d7068449e91b932fae70027d48690ebfb28dd6e78e1
+    home: https://github.com/leoligz-org/reusable-workflows
+    keywords:
+    - kubernetes
+    maintainers:
+    - email: leoligz@yahoo.com
+      name: Leo Li
+    name: universal
+    urls:
+    - https://github.com/leoligz-org/reusable-workflows/releases/download/universal-0.1.0/universal-0.1.0.tgz
+    version: 0.1.0
+generated: "2026-04-05T21:36:40.375847788Z"
