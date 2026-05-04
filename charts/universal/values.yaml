@@ -213,9 +213,6 @@ tolerations: []
 
 affinity: {}  
 
-# Path to the configuration file inside the container
-configFilePath: /etc/universal-chart/config.toml
-
 # -- Metrics and monitoring configuration
 metrics:
   # -- ServiceMonitor configuration for Prometheus Operator monitoring
@@ -272,6 +269,14 @@ metrics:
     #       - record: my_custom_metric
     #         expr: sum(some_metric)
     additionalRules: []
+
+# Whether to use ConfigMap for configuration or pass config via command line arguments.
+# When true, the config will be rendered to a ConfigMap and mounted as a file.
+# When false, the config will be passed as command line arguments.
+useConfigFile: true
+
+# Path to the configuration file inside the container
+configFilePath: /etc/universal-chart/config.toml
 
 # MCP Server configuration options. See https://github.com/containers/universal-chart/blob/main/pkg/config/config.go for details.
 config:
