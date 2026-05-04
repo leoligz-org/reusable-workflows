@@ -6,5 +6,11 @@ metadata:
   labels:
     {{- include "universal-chart.labels" . | nindent 4 }}
 data:
+  {{- if .Values.useConfigFile }}
   config.toml: |
     {{- regexReplaceAll "(?m)(= -?\\d+)\\.0$" (tpl (toToml .Values.config) .) "${1}" | nindent 4 }}
+  {{- else }}
+    {{- with .Values.config }}
+      {{- tpl (toYaml .) $ | nindent 2 }}
+    {{- end }}
+  {{- end }}

@@ -45,8 +45,10 @@ spec:
               containerPort: {{ .Values.service.port }}
               protocol: TCP
           args:
+          {{- if .Values.useConfigFile }}
             - "--config"
             - "{{ .Values.configFilePath }}"
+          {{- end }}
           {{- if .Values.tls.enabled }}
             - "--tls-cert={{ .Values.tls.mountPath }}/{{ .Values.tls.certFile }}"
             - "--tls-key={{ .Values.tls.mountPath }}/{{ .Values.tls.keyFile }}"
@@ -59,6 +61,11 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+          {{- if and (not .Values.useConfigFile) .Values.config }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "universal-chart.fullname" . }}
+          {{- end }}
           {{- with .Values.livenessProbe }}
           livenessProbe:
             {{- $probe := . | deepCopy }}
