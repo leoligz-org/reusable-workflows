@@ -1,5 +1,7 @@
-{{- if .Values.ingress.enabled -}}
-{{- $host := required "Ingress hostname must be specified" (tpl .Values.ingress.host .) }}
+{{- if .Values.httpRoute.create -}}
+{{- if or (not .Values.httpRoute.hostnames) (eq (len .Values.httpRoute.hostnames) 0) }}
+{{- fail "Validation Error: .Values.httpRoute.hostnames cannot be empty! Please provide at least one hostname." }}
+{{- end }}
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -8,24 +10,41 @@ metadata:
   labels:
     {{- include "universal-chart.labels" . | nindent 4 }}
   annotations:
-  {{- with .Values.ingress.annotations }}
+  {{- with .Values.httpRoute.annotations }}
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
   hostnames:
-  - {{ $host }}
+   {{- toYaml .Values.httpRoute.hostnames | nindent 4 }}
   parentRefs:
-  - name: gateway
-    namespace: istio-ingress
+  {{- if .Values.httpRoute.parentRefs }}
+  {{- range $i, $pr := .Values.httpRoute.parentRefs }}
+    - name: {{ $pr.name }}
+      namespace: {{ default $.Release.Namespace $pr.namespace }}
+      {{- if $pr.sectionName }}
+      sectionName: {{ $pr.sectionName }}
+      {{- end }}
+  {{- end }}
+  {{- else }}
+    # Default parentRef: gateway in the release namespace
+    - name: gateway
+      namespace: {{ .Release.Namespace }}
+  {{- end }}
   rules:
-  - backendRefs:
-    - group: ""
-      kind: Service
-      name: {{ include "universal-chart.fullname" $ }}
-      port: {{ $.Values.service.port }}
-      weight: 1
-    matches:
-    - path:
-        type: {{ .Values.ingress.pathType }}
-        value: {{ .Values.ingress.path }}
+  {{- if .Values.httpRoute.rules }}
+  {{- range $ri, $rule := .Values.httpRoute.rules }}
+    - backendRefs:
+      {{- range $bi, $br := $rule.backendRefs }}
+        - name: {{ $br.name }}
+          namespace: {{ default $.Release.Namespace $br.namespace }}
+          port: {{ $br.port }}
+      {{- end }}
+  {{- end }}
+  {{- else }}
+    # Default rule: backend to a service named after the chart on port {{ .Values.service.port }}
+    - backendRefs:
+        - name: {{ include "universal-chart.fullname" . }}
+          namespace: {{ .Release.Namespace }}
+          port: {{ .Values.service.port }}
+  {{- end }}
 {{- end }}

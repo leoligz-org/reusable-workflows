@@ -5,7 +5,11 @@ metadata:
   name: {{ include "universal-chart.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-{{ include "universal-chart.labels" . | indent 4 }}
+    {{- include "universal-chart.labels" . | nindent 4 }}
+  annotations:
+  {{- with .Values.tcpRoute.annotations }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   parentRefs:
   {{- if .Values.tcpRoute.parentRefs }}
@@ -32,11 +36,11 @@ spec:
       {{- end }}
   {{- end }}
   {{- else }}
-    # Default rule: backend to a service named after the chart on port 25565
+    # Default rule: backend to a service named after the chart on port {{ .Values.service.port }}
     - backendRefs:
         - name: {{ include "universal-chart.fullname" . }}
           namespace: {{ .Release.Namespace }}
-          port: 25565
+          port: {{ .Values.service.port }}
   {{- end }}
 {{- end }}
 
