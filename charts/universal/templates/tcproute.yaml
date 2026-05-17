@@ -1,0 +1,42 @@
+{{- if .Values.tcpRoute.create -}}
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TCPRoute
+metadata:
+  name: {{ include "universal-chart.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "universal-chart.labels" . | indent 4 }}
+spec:
+  parentRefs:
+  {{- if .Values.tcpRoute.parentRefs }}
+  {{- range $i, $pr := .Values.tcpRoute.parentRefs }}
+    - name: {{ $pr.name }}
+      namespace: {{ default $.Release.Namespace $pr.namespace }}
+      {{- if $pr.sectionName }}
+      sectionName: {{ $pr.sectionName }}
+      {{- end }}
+  {{- end }}
+  {{- else }}
+    # Default parentRef: gateway in the release namespace
+    - name: gateway
+      namespace: {{ .Release.Namespace }}
+  {{- end }}
+  rules:
+  {{- if .Values.tcpRoute.rules }}
+  {{- range $ri, $rule := .Values.tcpRoute.rules }}
+    - backendRefs:
+      {{- range $bi, $br := $rule.backendRefs }}
+        - name: {{ $br.name }}
+          namespace: {{ default $.Release.Namespace $br.namespace }}
+          port: {{ $br.port }}
+      {{- end }}
+  {{- end }}
+  {{- else }}
+    # Default rule: backend to a service named after the chart on port 25565
+    - backendRefs:
+        - name: {{ include "universal-chart.fullname" . }}
+          namespace: {{ .Release.Namespace }}
+          port: 25565
+  {{- end }}
+{{- end }}
+

@@ -287,3 +287,13 @@ configFilePath: /etc/universal-chart/config.toml
 # MCP Server configuration options. See https://github.com/containers/universal-chart/blob/main/pkg/config/config.go for details.
 config:
   port: "{{ .Values.service.port }}"
+
+# -- TCPRoute (Gateway API) configuration for routing TCP traffic via a Gateway
+# Set create=true to render a TCPRoute resource. You can override parentRefs and
+# rules to match your Gateway and backend services.
+tcpRoute:
+  create: false
+  # parentRefs is a list of { name, namespace, sectionName }
+  parentRefs: []
+  # rules is a list of rules, each with backendRefs (list of { name, namespace, port })
+  rules: []
