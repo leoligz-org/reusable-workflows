@@ -105,7 +105,7 @@ podSecurityContext: {}
 defaultSecurityContext:
   allowPrivilegeEscalation: false
   capabilities:
-      drop:
+    drop:
       - ALL
   runAsNonRoot: true
 
@@ -127,7 +127,7 @@ service:
 ingress:
   enabled: true
   annotations: {}
-  host: ""
+  host: "dummy.duckdns.org"
   path: /
   pathType: PathPrefix
 
@@ -149,6 +149,12 @@ readinessProbe:
   httpGet:
     path: /healthz
     port: http
+
+persistentVolumeClaim:
+  create: false
+  name: ""
+  storageClassName: ""
+  size: 1Gi
 
 # -- Additional volumes on the output Deployment definition.
 extraVolumes: []
@@ -211,7 +217,7 @@ nodeSelector: {}
 
 tolerations: []
 
-affinity: {}  
+affinity: {}
 
 # -- Metrics and monitoring configuration
 metrics:
