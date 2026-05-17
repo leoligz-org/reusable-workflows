@@ -81,3 +81,15 @@ Usage: {{ include "universal-chart.fullname.suffixed" (dict "root" $ "suffix" "m
 {{- $suffix := .suffix -}}
 {{- printf "%s-%s" $fullname $suffix | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
+
+{{/*
+Create a PVC name, ensuring the total length doesn't exceed 63 characters.
+Usage: {{ include "universal-chart.pvcName" . }}
+*/}}
+{{- define "universal-chart.pvcName" -}}
+{{- if .Values.persistentVolumeClaim.name -}}
+{{- .Values.persistentVolumeClaim.name -}}
+{{- else -}}
+{{- include "universal-chart.fullname" . -}}
+{{- end -}}
+{{- end -}}

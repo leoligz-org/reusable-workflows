@@ -41,7 +41,7 @@ spec:
           image: "{{ template "universal-chart.image" .Values.image }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - name: http
+            - name: {{ .Values.service.targetPort }}
               containerPort: {{ .Values.service.port }}
               protocol: TCP
           args:
@@ -65,6 +65,14 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ include "universal-chart.fullname" . }}
+          {{- end }}
+          {{- with .Values.startupProbe }}
+          startupProbe:
+            {{- $probe := . | deepCopy }}
+            {{- if and $.Values.tls.enabled (hasKey $probe "httpGet") }}
+            {{- $_ := set $probe.httpGet "scheme" "HTTPS" }}
+            {{- end }}
+            {{- tpl (toYaml $probe) $ | nindent 12 }}
           {{- end }}
           {{- with .Values.livenessProbe }}
           livenessProbe:
@@ -94,6 +102,10 @@ spec:
               mountPath: {{ .Values.tls.mountPath }}
               readOnly: true
           {{- end }}
+          {{- if .Values.persistentVolumeClaim.create }}
+            - name: data
+              mountPath: {{ .Values.persistentVolumeClaim.mountPath }}
+          {{- end }}
           {{- with .Values.extraVolumeMounts }}
             {{- tpl (toYaml .) $ | nindent 12 }}
           {{- end }}
@@ -108,6 +120,11 @@ spec:
         - name: tls
           secret:
             secretName: {{ required "tls.secretName is required when tls.enabled is true" .Values.tls.secretName }}
+      {{- end }}
+      {{- if .Values.persistentVolumeClaim.create }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "universal-chart.pvcName" . }}
       {{- end }}
       {{- with .Values.extraVolumes }}
         {{- tpl (toYaml .) $ | nindent 8 }}

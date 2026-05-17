@@ -105,7 +105,7 @@ podSecurityContext: {}
 defaultSecurityContext:
   allowPrivilegeEscalation: false
   capabilities:
-      drop:
+    drop:
       - ALL
   runAsNonRoot: true
 
@@ -123,13 +123,27 @@ service:
   # -- Annotations to add to the service
   annotations: {}
 
-# -- This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
-ingress:
-  enabled: true
+# -- This block is for setting up the HTTPRoute (Gateway API) configuration for routing HTTP traffic via a Gateway.
+# -- Set create=true to render an HTTPRoute resource. You can override parentRefs and rules to match your Gateway and backend services.
+httpRoute:
+  create: false
   annotations: {}
-  host: ""
-  path: /
-  pathType: PathPrefix
+  hostnames: []
+  # parentRefs is a list of { name, namespace, sectionName }
+  parentRefs: []
+  # rules is a list of rules, each with matches (list of { path, pathType }) and backendRefs (list of { name, namespace, port })
+  rules: []
+
+# -- TCPRoute (Gateway API) configuration for routing TCP traffic via a Gateway
+# Set create=true to render a TCPRoute resource. You can override parentRefs and
+# rules to match your Gateway and backend services.
+tcpRoute:
+  create: false
+  annotations: {}
+  # parentRefs is a list of { name, namespace, sectionName }
+  parentRefs: []
+  # rules is a list of rules, each with backendRefs (list of { name, namespace, port })
+  rules: []
 
 # -- Resource requests and limits for the container.
 resources:
@@ -140,15 +154,26 @@ resources:
     cpu: 100m
     memory: 128Mi
 
-# -- Liveness and readiness probes for the container.
-livenessProbe:
-  httpGet:
-    path: /healthz
-    port: http
-readinessProbe:
-  httpGet:
-    path: /healthz
-    port: http
+# -- Probes for the container.
+startupProbe: {}
+  # httpGet:
+  #   path: /healthz
+  #   port: http
+livenessProbe: {}
+  # httpGet:
+  #   path: /healthz
+  #   port: http
+readinessProbe: {}
+  # httpGet:
+  #   path: /healthz
+  #   port: http
+
+persistentVolumeClaim:
+  create: false
+  name: "data"
+  storageClassName: ""
+  size: 1Gi
+  mountPath: /data
 
 # -- Additional volumes on the output Deployment definition.
 extraVolumes: []
@@ -211,7 +236,7 @@ nodeSelector: {}
 
 tolerations: []
 
-affinity: {}  
+affinity: {}
 
 # -- Metrics and monitoring configuration
 metrics:

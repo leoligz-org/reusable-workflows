@@ -1,0 +1,37 @@
+httpRoute:
+  create: true
+  hostnames:
+  - "foo.example.com"
+  # parentRefs is a list of { name, namespace, sectionName }
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: gateway
+    namespace: istio-ingress
+  # rules is a list of rules, each with backendRefs (list of { name, namespace, port })
+  rules:
+  - backendRefs:
+    - group: ""
+      kind: Service
+      name: foo-server
+      port: 8080
+      weight: 1
+    matches:
+    - path:
+        type: PathPrefix
+        value: /
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+
+useConfigFile: false
+
+config:
+  BAR: "true"

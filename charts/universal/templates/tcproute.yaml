@@ -1,24 +1,19 @@
-{{- if .Values.httpRoute.create -}}
-{{- if or (not .Values.httpRoute.hostnames) (eq (len .Values.httpRoute.hostnames) 0) }}
-{{- fail "Validation Error: .Values.httpRoute.hostnames cannot be empty! Please provide at least one hostname." }}
-{{- end }}
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
+{{- if .Values.tcpRoute.create -}}
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TCPRoute
 metadata:
   name: {{ include "universal-chart.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "universal-chart.labels" . | nindent 4 }}
   annotations:
-  {{- with .Values.httpRoute.annotations }}
+  {{- with .Values.tcpRoute.annotations }}
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  hostnames:
-   {{- toYaml .Values.httpRoute.hostnames | nindent 4 }}
   parentRefs:
-  {{- if .Values.httpRoute.parentRefs }}
-  {{- range $i, $pr := .Values.httpRoute.parentRefs }}
+  {{- if .Values.tcpRoute.parentRefs }}
+  {{- range $i, $pr := .Values.tcpRoute.parentRefs }}
     - name: {{ $pr.name }}
       namespace: {{ default $.Release.Namespace $pr.namespace }}
       {{- if $pr.sectionName }}
@@ -31,8 +26,8 @@ spec:
       namespace: {{ .Release.Namespace }}
   {{- end }}
   rules:
-  {{- if .Values.httpRoute.rules }}
-  {{- range $ri, $rule := .Values.httpRoute.rules }}
+  {{- if .Values.tcpRoute.rules }}
+  {{- range $ri, $rule := .Values.tcpRoute.rules }}
     - backendRefs:
       {{- range $bi, $br := $rule.backendRefs }}
         - name: {{ $br.name }}
@@ -48,3 +43,4 @@ spec:
           port: {{ .Values.service.port }}
   {{- end }}
 {{- end }}
+
