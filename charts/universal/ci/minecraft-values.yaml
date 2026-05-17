@@ -1,0 +1,78 @@
+serviceAccount:
+  create: false
+
+service:
+  port: 25565
+  targetPort: minecraft
+
+tcpRoute:
+  create: true
+  # parentRefs is a list of { name, namespace, sectionName }
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: gateway
+    namespace: istio-ingress
+    sectionName: mc-listener
+  # rules is a list of rules, each with backendRefs (list of { name, namespace, port })
+  rules:
+  - backendRefs:
+    - group: ""
+      kind: Service
+      name: minecraft-service
+      port: 25565
+      weight: 1
+
+# -- Resource requests and limits for the container.
+resources:
+  limits:
+    cpu: 2
+    memory: 1Gi
+  requests:
+    cpu: 2
+    memory: 2Gi
+
+# 1. STARTUP PROBE: Handles the heavy lifting during world generation/boot.
+startupProbe:
+  exec:
+    command:
+    - mc-health
+  # Allow up to 4 minutes to boot (24 tries * 10 seconds)
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  failureThreshold: 24
+  timeoutSeconds: 5
+
+# 2. LIVENESS PROBE: Aggressively monitors the server once it is running.
+livenessProbe:
+  exec:
+    command:
+    - mc-health
+  # Only runs AFTER the startup probe succeeds
+  periodSeconds: 20
+  failureThreshold: 3
+  timeoutSeconds: 5
+
+readinessProbe:
+  exec:
+    command:
+    - mc-health
+  # Only runs AFTER the startup probe succeeds
+  periodSeconds: 20
+  failureThreshold: 3
+  timeoutSeconds: 5
+
+persistentVolumeClaim:
+  create: true
+  name: mc-data-pvc
+  storageClassName: default
+  size: 10Gi
+  mountPath: /data
+
+useConfigFile: false
+
+config:
+  ALLOW_CHEATS: "true"
+  DIFFICULTY: hard
+  EULA: "TRUE"
+  VERSION: LATEST
