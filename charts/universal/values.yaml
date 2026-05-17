@@ -152,9 +152,10 @@ readinessProbe:
 
 persistentVolumeClaim:
   create: false
-  name: ""
+  name: "data"
   storageClassName: ""
   size: 1Gi
+  mountPath: /data
 
 # -- Additional volumes on the output Deployment definition.
 extraVolumes: []

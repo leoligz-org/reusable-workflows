@@ -94,6 +94,10 @@ spec:
               mountPath: {{ .Values.tls.mountPath }}
               readOnly: true
           {{- end }}
+          {{- if .Values.persistentVolumeClaim.create }}
+            - name: data
+              mountPath: {{ .Values.persistentVolumeClaim.mountPath }}
+          {{- end }}
           {{- with .Values.extraVolumeMounts }}
             {{- tpl (toYaml .) $ | nindent 12 }}
           {{- end }}
@@ -108,6 +112,11 @@ spec:
         - name: tls
           secret:
             secretName: {{ required "tls.secretName is required when tls.enabled is true" .Values.tls.secretName }}
+      {{- end }}
+      {{- if .Values.persistentVolumeClaim.create }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "universal-chart.pvcName" . }}
       {{- end }}
       {{- with .Values.extraVolumes }}
         {{- tpl (toYaml .) $ | nindent 8 }}
