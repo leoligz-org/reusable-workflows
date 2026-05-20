@@ -1,5 +1,5 @@
 apiVersion: v2
-appVersion: 0.3.0
+appVersion: 0.4.0
 description: Helm Chart for the leoligz-org
 home: https://github.com/leoligz-org/reusable-workflows
 keywords:
@@ -10,4 +10,4 @@ maintainers:
 - email: andrew.li2252@gmail.com
   name: Andrew Li
 name: universal
-version: 0.3.0
+version: 0.4.0
