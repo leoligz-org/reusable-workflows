@@ -61,9 +61,13 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-          {{- if and (not .Values.useConfigFile) .Values.config }}
           envFrom:
+          {{- if and (not .Values.useConfigFile) .Values.config }}
             - configMapRef:
+                name: {{ include "universal-chart.fullname" . }}
+          {{- end }}
+          {{- if .Values.externalSecret.create }}
+            - secretRef:
                 name: {{ include "universal-chart.fullname" . }}
           {{- end }}
           {{- with .Values.startupProbe }}

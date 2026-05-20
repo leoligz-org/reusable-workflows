@@ -76,3 +76,6 @@ config:
   DIFFICULTY: hard
   EULA: "TRUE"
   VERSION: LATEST
+
+externalSecret:
+  create: true
