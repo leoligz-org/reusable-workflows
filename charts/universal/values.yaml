@@ -314,3 +314,4 @@ externalSecret:
   secretStoreRef:
     name: vault-backend
     kind: ClusterSecretStore
+  decodingStrategy: None # can be None, Base64, Base64URL or Auto
