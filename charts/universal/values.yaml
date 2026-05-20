@@ -306,3 +306,11 @@ configFilePath: /etc/universal-chart/config.toml
 # MCP Server configuration options. See https://github.com/containers/universal-chart/blob/main/pkg/config/config.go for details.
 config:
   port: "{{ .Values.service.port }}"
+
+externalSecret:
+  # Whether to create an ExternalSecret resource to fetch secrets from an external provider (e.g., Vault).
+  # When true, an ExternalSecret will be created that references a ClusterSecretStore named "vault-backend".
+  create: false
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
