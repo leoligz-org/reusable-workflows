@@ -13,6 +13,23 @@ entries:
     version: 0.2.1
   universal:
   - apiVersion: v2
+    appVersion: 0.5.0
+    created: "2026-07-06T20:58:12.054513372Z"
+    description: Helm Chart for the leoligz-org
+    digest: 3acb19ed24109aa0380126caa7de88371507057dc1877ad65ef891a33ca86002
+    home: https://github.com/leoligz-org/reusable-workflows
+    keywords:
+    - kubernetes
+    maintainers:
+    - email: leoligz@yahoo.com
+      name: Leo Li
+    - email: andrew.li2252@gmail.com
+      name: Andrew Li
+    name: universal
+    urls:
+    - https://github.com/leoligz-org/reusable-workflows/releases/download/universal-0.5.0/universal-0.5.0.tgz
+    version: 0.5.0
+  - apiVersion: v2
     appVersion: 0.4.1
     created: "2026-05-20T02:44:16.597839346Z"
     description: Helm Chart for the leoligz-org
@@ -93,4 +110,4 @@ entries:
     urls:
     - https://github.com/leoligz-org/reusable-workflows/releases/download/universal-0.1.0/universal-0.1.0.tgz
     version: 0.1.0
-generated: "2026-05-20T02:44:16.597859627Z"
+generated: "2026-07-06T20:58:12.054537497Z"
