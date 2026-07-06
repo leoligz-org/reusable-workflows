@@ -1,0 +1,102 @@
+image:
+  registry: ghcr.io
+  repository: usetrmnl/terminus
+  tag: latest
+
+serviceAccount:
+  create: false
+
+service:
+  port: 2345
+
+httpRoute:
+  create: true
+  hostnames:
+  - "terminus.example.com"
+  # parentRefs is a list of { name, namespace, sectionName }
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: gateway
+    namespace: istio-ingress
+  # rules is a list of rules, each with backendRefs (list of { name, namespace, port })
+  rules:
+  - backendRefs:
+    - group: ""
+      kind: Service
+      name: terminus-universal
+      port: 2345
+      weight: 1
+    matches:
+    - path:
+        type: PathPrefix
+        value: /
+
+persistentVolumeClaim:
+  create: true
+  name: terminus-uploads
+  storageClassName: storage-delete
+  size: 2Gi
+  mountPath: /app/public/uploads
+
+useConfigFile: false
+
+config:
+  BAR: "true"
+
+extraConfig:
+  FOO: "false"
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 200m
+    memory: 512Mi
+
+extraContainers:
+  - name: sidekiq
+    image: ghcr.io/usetrmnl/terminus:latest
+    command: ["bundle", "exec", "sidekiq", "-r", "./config/sidekiq.rb"]
+    volumeMounts:
+      - mountPath: /app/public/uploads
+        name: data
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+    envFrom:
+      - configMapRef:
+          name: terminus-universal
+      - secretRef:
+          name: terminus-universal
+
+externalSecret:
+  create: true
+  useTemplateEngine: true
+  mappings:
+    # Example A: Standard Mapping (Simple string payload pass-through)
+    - secretKey: APP_SECRET
+      remoteRef:
+        key: terminus/secrets
+        property: APP_SECRET
+
+    # Example B: Constructing a Custom Connection String from a Single Fetch
+    - secretKey: DATABASE_URL
+      remoteRef:
+        key: terminus/postgresql
+        property: postgres-password
+      # We reference the current key's value directly inside a custom string structure:
+      templateString: "postgres://postgres:{{ .DATABASE_URL }}@terminus-postgresql:5432/terminus"
+
+    # Example B: Constructing a Custom Connection String from a Single Fetch
+    - secretKey: KEYVALUE_URL
+      remoteRef:
+        key: terminus/valkey
+        property: password
+      # We reference the current key's value directly inside a custom string structure:
+      templateString: "redis://:{{ .KEYVALUE_URL }}@terminus-valkey-client:6379/0"

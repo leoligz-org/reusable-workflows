@@ -303,9 +303,11 @@ useConfigFile: true
 # Path to the configuration file inside the container
 configFilePath: /etc/universal-chart/config.toml
 
-# MCP Server configuration options. See https://github.com/containers/universal-chart/blob/main/pkg/config/config.go for details.
-config:
-  port: "{{ .Values.service.port }}"
+# Common configuration values for all containers.
+config: {}
+
+# Extra configuration values for the main container.
+extraConfig: {}
 
 externalSecret:
   # Whether to create an ExternalSecret resource to fetch secrets from an external provider (e.g., Vault).
@@ -315,3 +317,46 @@ externalSecret:
     name: vault-backend
     kind: ClusterSecretStore
   decodingStrategy: None # can be None, Base64, Base64URL or Auto
+
+  # Toggle this switch to swap between Option 1 (false) and Option 2 (true)
+  useTemplateEngine: true
+
+  # -----------------------------------------------------------------
+  # Option 1: Straightforward pass-through (Extract whole secret blocks)
+  # -----------------------------------------------------------------
+  # dataFrom:
+  #   - extract:
+  #       key: production/app-secrets
+  #   - extract:
+  #       key: production/database-secrets
+
+  # -----------------------------------------------------------------
+  # Option 2: Flexible Array of Mapping Pairs (data + template)
+  # -----------------------------------------------------------------
+  mappings: []
+    # Example A: Standard Mapping (Simple string payload pass-through)
+    # - secretKey: DB_USER
+    #   remoteRef:
+    #     key: production/rds-cluster
+    #     property: username
+
+    # Example B: Constructing a Custom Connection String from a Single Fetch
+    # - secretKey: DATABASE_URL
+    #   remoteRef:
+    #     key: production/rds-cluster
+    #     property: password
+    #   # We reference the current key's value directly inside a custom string structure:
+    #   templateString: "postgresql://app_admin:{{ .DATABASE_URL | toString }}@rds-cluster.internal:5432/app_db"
+
+    # Example C: Embedding values inside a structural JSON Payload config
+    # - secretKey: CONFIG_JSON
+    #   remoteRef:
+    #     key: production/third-party-tokens
+    #     property: app_key
+    #   templateString: |
+    #     {
+    #       "environment": "production",
+    #       "auth": {
+    #         "provider_key": "{{ .CONFIG_JSON | toString }}"
+    #       }
+    #     }
