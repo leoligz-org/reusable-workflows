@@ -3,8 +3,8 @@ name: Build and Release Docker Images
 on:
   push:
     # Pattern matched against refs/tags
-    tags:        
-      - '*'           # Push events to every tag not containing /
+    tags:
+      - "*" # Push events to every tag not containing /
 
   workflow_call:
     secrets:
@@ -14,12 +14,12 @@ on:
         required: true
     inputs:
       ghcr:
-        description: 'Whether to push to GHCR after build'
+        description: "Whether to push to GHCR after build"
         required: true
         default: true
         type: boolean
       private:
-        description: 'Whether to push to private registry after build'
+        description: "Whether to push to private registry after build"
         required: true
         default: true
         type: boolean
@@ -89,7 +89,7 @@ jobs:
 
           # --- 2. Write the Docker Config File ---
           # Use printf to construct the full JSON string reliably
-          printf '{"auths": {%s}}\n' "$AUTH_ENTRIES" > /kaniko/.docker/config.json
+          printf '{"auths": {%s}}' "$AUTH_ENTRIES" > /kaniko/.docker/config.json
 
           # --- 3. Configure Git ---
           export GIT_USERNAME="kaniko-bot"
