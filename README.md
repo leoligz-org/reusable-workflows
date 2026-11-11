@@ -1,9 +1,9 @@
 # reusable-workflows
 
 ```bash
-helm template . --set "ingress.host=dummy.owner.duckdns.org" --set "useConfigFile=false" | kubeconform \
-  -summary \
-  -strict \
-  -schema-location default \
-  -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
+cd charts/universal/tests
+go mod init golden-chart-test
+go get github.com/gruntwork-io/terratest
+go get github.com/stretchr/testify
+go get k8s.io/api/core/v1
 ```
